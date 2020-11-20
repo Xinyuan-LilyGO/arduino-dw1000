@@ -49,9 +49,9 @@
 #define MAX_DEVICES 4
 
 //Default Pin for module:
-#define DEFAULT_RST_PIN 9
-#define DEFAULT_SPI_SS_PIN 10
-
+#define DEFAULT_RST_PIN 26
+#define DEFAULT_SPI_SS_PIN 13
+#define DEFAULT_IRQ_PIN	4
 //Default value
 //in ms
 #define DEFAULT_RESET_PERIOD 200
@@ -78,7 +78,7 @@ public:
 	static byte data[LEN_DATA];
 	
 	//initialisation
-	static void    initCommunication(uint8_t myRST = DEFAULT_RST_PIN, uint8_t mySS = DEFAULT_SPI_SS_PIN, uint8_t myIRQ = 2);
+	static void    initCommunication(uint8_t myRST = DEFAULT_RST_PIN, uint8_t mySS = DEFAULT_SPI_SS_PIN, uint8_t myIRQ = DEFAULT_IRQ_PIN,SPIClass&spi = SPI);
 	static void    configureNetwork(uint16_t deviceAddress, uint16_t networkId, const byte mode[]);
 	static void    generalStart();
 	static void    startAsAnchor(char address[], const byte mode[], const bool randomShortAddress = true);

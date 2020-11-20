@@ -29,7 +29,7 @@ DW1000Class DW1000;
 uint8_t DW1000Class::_ss;
 uint8_t DW1000Class::_rst;
 uint8_t DW1000Class::_irq;
-
+SPIClass *_spi;
 
 // IRQ callbacks
 void (* DW1000Class::_handleSent)(void)                      = 0;
@@ -113,7 +113,7 @@ const SPISettings* DW1000Class::_currentSPI = &_fastSPI;
  * ######################################################################### */
 
 void DW1000Class::end() {
-	SPI.end();
+	_spi->end();
 }
 
 void DW1000Class::select(uint8_t ss) {
@@ -162,24 +162,20 @@ void DW1000Class::reselect(uint8_t ss) {
 	digitalWrite(_ss, HIGH);
 }
 
-void DW1000Class::begin(uint8_t irq, uint8_t rst) {
+void DW1000Class::begin(uint8_t irq, uint8_t rst,SPIClass&spi) {
 	// generous initial init/wake-up-idle delay
 	delay(5);
 	// Configure the IRQ pin as INPUT. Required for correct interrupt setting for ESP8266
-    	pinMode(irq, INPUT);
-	// start SPI
-	SPI.begin();
-#ifndef ESP8266
-	SPI.usingInterrupt(digitalPinToInterrupt(irq)); // not every board support this, e.g. ESP8266
-#endif
+	pinMode(irq, INPUT_PULLDOWN);
 	// pin and basic member setup
+	_spi 		= &spi;
 	_rst        = rst;
 	_irq        = irq;
 	_deviceMode = IDLE_MODE;
 	// attach interrupt
 	//attachInterrupt(_irq, DW1000Class::handleInterrupt, CHANGE); // todo interrupt for ESP8266
 	// TODO throw error if pin is not a interrupt pin
-	attachInterrupt(digitalPinToInterrupt(_irq), DW1000Class::handleInterrupt, RISING); // todo interrupt for ESP8266
+	attachInterrupt(_irq, DW1000Class::handleInterrupt, RISING); // todo interrupt for ESP8266
 }
 
 void DW1000Class::manageLDE() {
@@ -1681,17 +1677,17 @@ void DW1000Class::readBytes(byte cmd, uint16_t offset, byte data[], uint16_t n) 
 			headerLen += 2;
 		}
 	}
-	SPI.beginTransaction(*_currentSPI);
+	_spi->beginTransaction(*_currentSPI);
 	digitalWrite(_ss, LOW);
 	for(i = 0; i < headerLen; i++) {
-		SPI.transfer(header[i]); // send header
+		_spi->transfer(header[i]); // send header
 	}
 	for(i = 0; i < n; i++) {
-		data[i] = SPI.transfer(JUNK); // read values
+		data[i] = _spi->transfer(JUNK); // read values
 	}
 	delayMicroseconds(5);
 	digitalWrite(_ss, HIGH);
-	SPI.endTransaction();
+	_spi->endTransaction();
 }
 
 // always 4 bytes
@@ -1753,17 +1749,17 @@ void DW1000Class::writeBytes(byte cmd, uint16_t offset, byte data[], uint16_t da
 			headerLen += 2;
 		}
 	}
-	SPI.beginTransaction(*_currentSPI);
+	_spi->beginTransaction(*_currentSPI);
 	digitalWrite(_ss, LOW);
 	for(i = 0; i < headerLen; i++) {
-		SPI.transfer(header[i]); // send header
+		_spi->transfer(header[i]); // send header
 	}
 	for(i = 0; i < data_size; i++) {
-		SPI.transfer(data[i]); // write values
+		_spi->transfer(data[i]); // write values
 	}
 	delayMicroseconds(5);
 	digitalWrite(_ss, HIGH);
-	SPI.endTransaction();
+	_spi->endTransaction();
 }
 
 
